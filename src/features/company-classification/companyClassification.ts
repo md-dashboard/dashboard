@@ -1,4 +1,5 @@
 import type { Row } from '../../merge';
+import { compareRowsDesc } from '../../utils/sortRows';
 import type { CompanyOutputColumn, CompanyOutputRow, CompanyOutputSchema } from './types';
 
 const COMPANY_MATCH_FIELDS = ['판매자(협력사/브랜드)명', '출고지'];
@@ -31,6 +32,7 @@ function getOutputValue(row: Row, column: CompanyOutputColumn): string {
 export function getCompanyOutputRows(rows: Row[], schema: CompanyOutputSchema): CompanyOutputRow[] {
   return rows
     .filter((row) => isCompanyOrder(row, schema.aliases))
+    .sort(compareRowsDesc)
     .map((row, index) => ({
       key: String(row['_key'] ?? `${schema.id}-${index}`),
       cells: schema.columns.map((column) => getOutputValue(row, column)),

@@ -14,10 +14,19 @@ function App() {
   return (
     <div className="layout">
       <header className="topbar">
-        <div className="topbar-logo">주문 통합 도구</div>
+        <div className="topbar-logo">
+          <img src="/favicon.svg" alt="" className="topbar-logo-icon" />
+          <span>MDSMarketDashBoard</span>
+        </div>
         <nav className="topbar-links">
-          <span>사용 가이드</span>
-          <span>문의</span>
+          <a
+            className="topbar-link-guide"
+            href="https://github.com/md-dashboard/dashboard"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            사용 가이드
+          </a>
         </nav>
       </header>
 

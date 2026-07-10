@@ -6,6 +6,7 @@ import {
 } from '../../schema';
 import type { SourceType } from '../../schema';
 import type { PendingFileSelection, PendingUploadFile, UploadHistoryEntry } from '../../types/uploadedData';
+import { compareRowsDesc } from '../../utils/sortRows';
 import './orderMerge.css';
 import { exportToXlsx } from '../../export';
 
@@ -46,9 +47,11 @@ export function OrderMergeTab({
     return result;
   }, [rows, filterSource, search]);
 
-  // filteredRows 기준 전체선택 상태
-  const allFilteredChecked = filteredRows.length > 0 && filteredRows.every((row) => checkedKeys.has(row['_key'] as string));
-  const someFilteredChecked = filteredRows.some((row) => checkedKeys.has(row['_key'] as string));
+  const sortedRows = useMemo(() => [...filteredRows].sort(compareRowsDesc), [filteredRows]);
+
+  // sortedRows 기준 전체선택 상태
+  const allFilteredChecked = sortedRows.length > 0 && sortedRows.every((row) => checkedKeys.has(row['_key'] as string));
+  const someFilteredChecked = sortedRows.some((row) => checkedKeys.has(row['_key'] as string));
 
   function toggleCheck(key: string) {
     setCheckedKeys((prev) => {
@@ -61,23 +64,26 @@ export function OrderMergeTab({
 
   function toggleAllFiltered() {
     if (allFilteredChecked) {
-      // 현재 filteredRows에 있는 것만 해제 (다른 체크는 유지)
+      // 현재 sortedRows에 있는 것만 해제 (다른 체크는 유지)
       setCheckedKeys((prev) => {
         const next = new Set(prev);
-        filteredRows.forEach((row) => next.delete(row['_key'] as string));
+        sortedRows.forEach((row) => next.delete(row['_key'] as string));
         return next;
       });
     } else {
       setCheckedKeys((prev) => {
         const next = new Set(prev);
-        filteredRows.forEach((row) => next.add(row['_key'] as string));
+        sortedRows.forEach((row) => next.add(row['_key'] as string));
         return next;
       });
     }
   }
 
-  // 체크된 행 (rows 전체에서 추출 — 필터 밖 체크도 포함)
-  const checkedRows = rows.filter((row) => checkedKeys.has(row['_key'] as string));
+  // 체크된 행 (rows 전체에서 추출 — 필터 밖 체크도 포함, export도 동일한 정렬 순서를 따름)
+  const checkedRows = useMemo(
+    () => rows.filter((row) => checkedKeys.has(row['_key'] as string)).sort(compareRowsDesc),
+    [rows, checkedKeys],
+  );
 
   const countsBySource = useMemo(() => {
     const counts: Record<SourceType, number> = { CJ: 0, NAVER: 0, GS: 0 };
@@ -201,14 +207,14 @@ export function OrderMergeTab({
                     checked={allFilteredChecked}
                     ref={(el) => { if (el) el.indeterminate = !allFilteredChecked && someFilteredChecked; }}
                     onChange={toggleAllFiltered}
-                    disabled={filteredRows.length === 0}
+                    disabled={sortedRows.length === 0}
                   />
                 </th>
                 {visibleColumns.map((column) => <th key={column}>{column}</th>)}
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((row) => {
+              {sortedRows.map((row) => {
                 const key = row['_key'] as string;
                 const checked = checkedKeys.has(key);
                 return (
@@ -246,7 +252,7 @@ export function OrderMergeTab({
               })}
             </tbody>
           </table>
-          {filteredRows.length === 0 && (
+          {sortedRows.length === 0 && (
             <div className="empty-state">표시할 데이터가 없습니다.</div>
           )}
         </div>
