@@ -15,8 +15,8 @@ function App() {
     <div className="layout">
       <header className="topbar">
         <div className="topbar-logo">
-          <img src="/favicon.svg" alt="" className="topbar-logo-icon" />
-          <span>MDSMarketDashBoard</span>
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="topbar-logo-icon" />
+          <span>MDS Market DashBoard</span>
         </div>
         <nav className="topbar-links">
           <a
