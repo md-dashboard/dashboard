@@ -17,11 +17,28 @@ export interface DetectionResult {
   scores: Record<SourceType, number>;
 }
 
+// 엑셀 날짜/시간 셀은 raw 숫자(일련번호)로 읽히므로, 화면에 보이던 서식 텍스트를 그대로 쓴다.
+// (sheet_to_json + cellDates 조합은 로케일에 따라 셀 값을 잘못된 시간대로 되돌리는 문제가 있어 직접 셀을 순회한다)
+function sheetToRows(ws: XLSX.WorkSheet): unknown[][] {
+  const range = XLSX.utils.decode_range(ws['!ref'] ?? 'A1');
+  const rows: unknown[][] = [];
+  for (let r = range.s.r; r <= range.e.r; r += 1) {
+    const row: unknown[] = [];
+    for (let c = range.s.c; c <= range.e.c; c += 1) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c })];
+      if (!cell) { row.push(null); continue; }
+      row.push(cell.t === 'd' ? (cell.w ?? null) : (cell.v ?? null));
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
 export async function parseXlsx(file: File): Promise<ParsedFile> {
   const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: 'array' });
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
-  const raw: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  const raw: unknown[][] = sheetToRows(ws);
   const headerRow = (raw[0] ?? []) as unknown[];
   const header = headerRow.map((h, i) => (h === null || h === undefined || h === '' ? `(빈헤더_${i + 1})` : String(h)));
   // dedupe duplicate header names
@@ -31,7 +48,8 @@ export async function parseXlsx(file: File): Promise<ParsedFile> {
     seen.set(h, n);
     return n === 1 ? h : `${h}_${n}`;
   });
-  const dataRows = raw.slice(1).filter((r) => Array.isArray(r) && r.some((v) => v !== null && v !== undefined && v !== ''));
+  const dataRows = raw.slice(1)
+    .filter((r) => Array.isArray(r) && r.some((v) => v !== null && v !== undefined && v !== ''));
   return { fileName: file.name, header: dedup, rows: dataRows };
 }
 
