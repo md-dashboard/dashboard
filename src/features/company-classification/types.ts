@@ -1,9 +1,16 @@
-import type { SourceType } from '../../schema';
+export interface CompanyOutputColumn {
+  header: string;
+  sourceFields: string[];
+}
 
-export interface CompanyClassificationRow {
-  companyName: string;
-  orderCount: number;
-  sources: SourceType[];
-  shippingBases: string[];
-  productNameCount: number;
+export interface CompanyOutputSchema {
+  id: string;
+  name: string;
+  aliases: readonly string[];
+  columns: CompanyOutputColumn[];
+}
+
+export interface CompanyOutputRow {
+  key: string;
+  cells: string[];
 }

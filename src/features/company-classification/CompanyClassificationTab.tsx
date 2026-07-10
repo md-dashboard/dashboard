@@ -1,38 +1,40 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Row } from '../../merge';
-import { SOURCE_LABEL } from '../../schema';
-import {
-  getCompanyClassificationRows,
-  getUnclassifiedOrderCount,
-} from './companyClassification';
+import { getCompanyOutputRows } from './companyClassification';
+import { COMPANY_OUTPUT_SCHEMAS } from './companySchemas';
 import './companyClassification.css';
 
 export function CompanyClassificationTab({ rows }: { rows: Row[] }) {
-  const companyRows = useMemo(() => getCompanyClassificationRows(rows), [rows]);
-  const unclassifiedCount = useMemo(() => getUnclassifiedOrderCount(rows), [rows]);
+  const [activeCompanyId, setActiveCompanyId] = useState(COMPANY_OUTPUT_SCHEMAS[0].id);
+  const activeSchema = COMPANY_OUTPUT_SCHEMAS.find((schema) => schema.id === activeCompanyId)
+    ?? COMPANY_OUTPUT_SCHEMAS[0];
+  const companyRows = useMemo(
+    () => getCompanyOutputRows(rows, activeSchema),
+    [rows, activeSchema],
+  );
 
   return (
-    <>
-      <section className="card summary-grid">
-        <div className="summary-item">
-          <div className="summary-label">업로드 주문</div>
-          <div className="summary-value">{rows.length}</div>
-        </div>
-        <div className="summary-item">
-          <div className="summary-label">분류 후보 기업</div>
-          <div className="summary-value">{companyRows.length}</div>
-        </div>
-        <div className="summary-item">
-          <div className="summary-label">미분류 주문</div>
-          <div className="summary-value">{unclassifiedCount}</div>
-        </div>
-      </section>
+    <section className="card company-classification">
+      <div className="company-tabs" role="tablist" aria-label="기업 선택">
+        {COMPANY_OUTPUT_SCHEMAS.map((schema) => (
+          <button
+            key={schema.id}
+            type="button"
+            role="tab"
+            aria-selected={schema.id === activeSchema.id}
+            className={schema.id === activeSchema.id ? 'active' : ''}
+            onClick={() => setActiveCompanyId(schema.id)}
+          >
+            {schema.name}
+          </button>
+        ))}
+      </div>
 
-      <section className="card">
+      <div className="company-results">
         <div className="results-header">
           <div>
-            <div className="results-title">기업 분류 기준 데이터</div>
-            <p className="sub compact">확정된 주문 데이터 기준으로 기업/출고지 후보를 집계합니다.</p>
+            <div className="results-title">{activeSchema.name}</div>
+            <p className="sub compact">분류된 주문 {companyRows.length}건 · 출력 컬럼 {activeSchema.columns.length}개</p>
           </div>
         </div>
 
@@ -40,30 +42,30 @@ export function CompanyClassificationTab({ rows }: { rows: Row[] }) {
           <table>
             <thead>
               <tr>
-                <th>기업/출고지</th>
-                <th>주문 수</th>
-                <th>출처</th>
-                <th>출고지</th>
-                <th>상품명 보유 건</th>
+                {activeSchema.columns.map((column, index) => (
+                  <th key={`${column.header}-${index}`}>{column.header}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {companyRows.map((row) => (
-                <tr key={row.companyName}>
-                  <td>{row.companyName}</td>
-                  <td>{row.orderCount}</td>
-                  <td>{row.sources.map((source) => SOURCE_LABEL[source]).join(', ')}</td>
-                  <td>{row.shippingBases.join(', ')}</td>
-                  <td>{row.productNameCount}</td>
+                <tr key={row.key}>
+                  {row.cells.map((cell, index) => (
+                    <td key={`${activeSchema.columns[index].header}-${index}`}>{cell}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>
           </table>
           {companyRows.length === 0 && (
-            <div className="empty-state">주문 병합 탭에서 엑셀을 업로드하고 병합하면 기업 분류 후보가 표시됩니다.</div>
+            <div className="empty-state">
+              {rows.length === 0
+                ? '주문 병합 탭에서 엑셀 파일을 먼저 병합해 주세요.'
+                : `${activeSchema.name}으로 분류된 주문이 없습니다.`}
+            </div>
           )}
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

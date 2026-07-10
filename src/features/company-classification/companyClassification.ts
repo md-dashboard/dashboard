@@ -1,46 +1,38 @@
 import type { Row } from '../../merge';
-import type { SourceType } from '../../schema';
-import type { CompanyClassificationRow } from './types';
+import type { CompanyOutputColumn, CompanyOutputRow, CompanyOutputSchema } from './types';
 
-interface CompanyAccumulator {
-  companyName: string;
-  orderCount: number;
-  sources: Set<SourceType>;
-  shippingBases: Set<string>;
-  productNameCount: number;
+const COMPANY_MATCH_FIELDS = ['판매자(협력사/브랜드)명', '출고지'];
+
+function hasValue(value: unknown): boolean {
+  return value !== null && value !== undefined && String(value).trim() !== '';
 }
 
-export function getCompanyClassificationRows(rows: Row[]): CompanyClassificationRow[] {
-  const companies = new Map<string, CompanyAccumulator>();
-
-  for (const row of rows) {
-    const companyName = String(row['판매자(협력사/브랜드)명'] || row['출고지'] || '미분류');
-    const current = companies.get(companyName) ?? {
-      companyName,
-      orderCount: 0,
-      sources: new Set<SourceType>(),
-      shippingBases: new Set<string>(),
-      productNameCount: 0,
-    };
-
-    current.orderCount += 1;
-    if (row['출처']) current.sources.add(row['출처'] as SourceType);
-    if (row['출고지']) current.shippingBases.add(String(row['출고지']));
-    if (row['상품명']) current.productNameCount += 1;
-    companies.set(companyName, current);
-  }
-
-  return Array.from(companies.values())
-    .map((company) => ({
-      companyName: company.companyName,
-      orderCount: company.orderCount,
-      sources: Array.from(company.sources),
-      shippingBases: Array.from(company.shippingBases),
-      productNameCount: company.productNameCount,
-    }))
-    .sort((a, b) => b.orderCount - a.orderCount || a.companyName.localeCompare(b.companyName));
+function normalizeCompanyName(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('ko-KR')
+    .replace(/[^0-9a-z가-힣]/g, '');
 }
 
-export function getUnclassifiedOrderCount(rows: Row[]): number {
-  return rows.filter((row) => !row['판매자(협력사/브랜드)명'] && !row['출고지']).length;
+function isCompanyOrder(row: Row, aliases: readonly string[]): boolean {
+  const normalizedAliases = aliases.map(normalizeCompanyName).filter(Boolean);
+
+  return COMPANY_MATCH_FIELDS.some((field) => {
+    const companyValue = normalizeCompanyName(row[field]);
+    return companyValue !== '' && normalizedAliases.some((alias) => companyValue.includes(alias));
+  });
+}
+
+function getOutputValue(row: Row, column: CompanyOutputColumn): string {
+  const sourceField = column.sourceFields.find((field) => hasValue(row[field]));
+  return sourceField ? String(row[sourceField]) : '';
+}
+
+export function getCompanyOutputRows(rows: Row[], schema: CompanyOutputSchema): CompanyOutputRow[] {
+  return rows
+    .filter((row) => isCompanyOrder(row, schema.aliases))
+    .map((row, index) => ({
+      key: String(row['_key'] ?? `${schema.id}-${index}`),
+      cells: schema.columns.map((column) => getOutputValue(row, column)),
+    }));
 }
