@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   parseXlsx, detectSource, convertToUnifiedRows, upsertRows,
 } from '../merge';
-import { UPLOAD_DATE_FIELD } from '../schema';
+import { COMPANY_NAME_FIELD, UPLOAD_DATE_FIELD } from '../schema';
 import type { PendingFileSelection, PendingUploadFile, UploadedOrderDataState } from '../types/uploadedData';
 import { formatUploadDate } from '../utils/date';
 
@@ -85,6 +85,24 @@ export function useUploadedOrderData() {
     });
   }
 
+  function updateRowCompanyName(rowKey: string, companyName: string) {
+    setUploadedData((current) => {
+      const row = current.rowsByKey.get(rowKey);
+      if (!row) return current;
+
+      const rowsByKey = new Map(current.rowsByKey);
+      rowsByKey.set(rowKey, {
+        ...row,
+        [COMPANY_NAME_FIELD]: companyName.trim() === '' ? null : companyName,
+      });
+
+      return {
+        ...current,
+        rowsByKey,
+      };
+    });
+  }
+
   return {
     rows,
     pendingFiles: uploadedData.pendingFiles,
@@ -92,5 +110,6 @@ export function useUploadedOrderData() {
     addPendingFiles,
     updatePendingSelection,
     confirmPendingFile,
+    updateRowCompanyName,
   };
 }

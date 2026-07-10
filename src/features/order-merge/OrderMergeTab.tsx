@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
+import { COMPANY_NAMES, getCanonicalCompanyName } from '../../constants/companies';
 import type { Row } from '../../merge';
 import {
-  ALL_COLUMNS, SOURCE_LABEL, SOURCES,
+  ALL_COLUMNS, COMPANY_NAME_FIELD, SOURCE_LABEL, SOURCES,
 } from '../../schema';
 import type { SourceType } from '../../schema';
 import type { PendingFileSelection, PendingUploadFile, UploadHistoryEntry } from '../../types/uploadedData';
@@ -16,6 +17,7 @@ interface OrderMergeTabProps {
   onFiles: (files: FileList | File[]) => void | Promise<void>;
   onSelectPendingSource: (id: string, value: PendingFileSelection) => void;
   onConfirmPending: (id: string) => void;
+  onChangeCompanyName: (rowKey: string, companyName: string) => void;
 }
 
 export function OrderMergeTab({
@@ -25,6 +27,7 @@ export function OrderMergeTab({
   onFiles,
   onSelectPendingSource,
   onConfirmPending,
+  onChangeCompanyName,
 }: OrderMergeTabProps) {
   const [filterSource, setFilterSource] = useState<SourceFilter>('ALL');
   const [search, setSearch] = useState('');
@@ -49,6 +52,11 @@ export function OrderMergeTab({
     });
     return counts;
   }, [rows]);
+
+  const visibleColumns = useMemo(
+    () => ALL_COLUMNS.filter((column) => column !== '_key'),
+    [],
+  );
 
   function onDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault();
@@ -134,14 +142,36 @@ export function OrderMergeTab({
         <div className="table-wrap">
           <table>
             <thead>
-              <tr>{ALL_COLUMNS.filter((column) => column !== '_key').map((column) => <th key={column}>{column}</th>)}</tr>
+              <tr>{visibleColumns.map((column) => <th key={column}>{column}</th>)}</tr>
             </thead>
             <tbody>
               {filteredRows.map((row) => (
                 <tr key={row['_key'] as string}>
-                  {ALL_COLUMNS.filter((column) => column !== '_key').map((column) => (
-                    <td key={column}>{row[column] === null || row[column] === undefined ? '' : String(row[column])}</td>
-                  ))}
+                  {visibleColumns.map((column) => {
+                    const value = row[column];
+                    if (column === COMPANY_NAME_FIELD) {
+                      const companySelectValue = getCanonicalCompanyName(value) ?? '';
+                      return (
+                        <td key={column}>
+                          <select
+                            className="company-tag-select"
+                            aria-label="판매자 회사 선택"
+                            value={companySelectValue}
+                            onChange={(event) => onChangeCompanyName(String(row['_key']), event.target.value)}
+                          >
+                            <option value="">미지정</option>
+                            {COMPANY_NAMES.map((companyName) => (
+                              <option key={companyName} value={companyName}>{companyName}</option>
+                            ))}
+                          </select>
+                        </td>
+                      );
+                    }
+
+                    return (
+                      <td key={column}>{value === null || value === undefined ? '' : String(value)}</td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>

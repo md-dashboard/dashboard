@@ -79,6 +79,22 @@
   color: #fff;
 }
 
+.company-tag-select {
+  min-width: 128px;
+  height: 28px;
+  border-radius: 999px;
+  border-color: #cfd8e3;
+  background: #eef5ff;
+  color: #1f5f99;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.company-tag-select:focus {
+  outline: 2px solid rgba(27, 124, 224, 0.24);
+  outline-offset: 1px;
+}
+
 .history ul {
   list-style: none;
   margin: 8px 0 0;

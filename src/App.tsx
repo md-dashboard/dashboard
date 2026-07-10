@@ -52,6 +52,7 @@ function App() {
               onFiles={uploadedOrderData.addPendingFiles}
               onSelectPendingSource={uploadedOrderData.updatePendingSelection}
               onConfirmPending={uploadedOrderData.confirmPendingFile}
+              onChangeCompanyName={uploadedOrderData.updateRowCompanyName}
             />
           ) : (
             <CompanyClassificationTab rows={uploadedOrderData.rows} />
