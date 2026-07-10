@@ -77,6 +77,17 @@ export interface ConvertResult {
   skippedNoOrderNumber: number;
 }
 
+function hasValue(value: unknown): boolean {
+  return value !== null && value !== undefined && String(value).trim() !== '';
+}
+
+function shouldSkipMappedValue(source: SourceType, header: string, target: string, value: unknown, out: Row): boolean {
+  if (source !== 'NAVER' || target !== '택배사') return false;
+  if (header === '택배사') return hasValue(out['택배사']);
+  if (header === '택배사(주문 기준)') return !hasValue(value) && hasValue(out['택배사']);
+  return false;
+}
+
 // 주문번호가 비어있는 행은 실제 주문이 아니라 합계/푸터 행일 가능성이 높아 제외한다.
 export function convertToUnifiedRows(source: SourceType, parsed: ParsedFile): ConvertResult {
   const map = MAPS[source];
@@ -91,7 +102,10 @@ export function convertToUnifiedRows(source: SourceType, parsed: ParsedFile): Co
     header.forEach((h, i) => {
       const v = r[i];
       if (h in map) {
-        out[map[h]] = v ?? null;
+        const target = map[h];
+        if (!shouldSkipMappedValue(source, h, target, v, out)) {
+          out[target] = v ?? null;
+        }
       } else if (h in auditMap) {
         out[auditMap[h]] = v ?? null;
       }
