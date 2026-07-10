@@ -29,6 +29,10 @@
   padding: 20px 24px 24px;
 }
 
+.company-export-button {
+  flex-shrink: 0;
+}
+
 .classification-table {
   max-height: 58vh;
 }

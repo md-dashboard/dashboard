@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Row } from '../../merge';
+import { exportCompanyOutputToXlsx } from './companyExport';
 import { getCompanyOutputRows } from './companyClassification';
 import { COMPANY_OUTPUT_SCHEMAS } from './companySchemas';
 import './companyClassification.css';
@@ -36,6 +37,14 @@ export function CompanyClassificationTab({ rows }: { rows: Row[] }) {
             <div className="results-title">{activeSchema.name}</div>
             <p className="sub compact">분류된 주문 {companyRows.length}건 · 출력 컬럼 {activeSchema.columns.length}개</p>
           </div>
+          <button
+            className="primary company-export-button"
+            type="button"
+            disabled={companyRows.length === 0}
+            onClick={() => exportCompanyOutputToXlsx(activeSchema, companyRows)}
+          >
+            양식 다운로드 {companyRows.length > 0 ? `(${companyRows.length}건)` : ''}
+          </button>
         </div>
 
         <div className="table-wrap classification-table">
