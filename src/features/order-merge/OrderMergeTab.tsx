@@ -6,6 +6,7 @@ import {
 import type { SourceType } from '../../schema';
 import type { PendingFileSelection, PendingUploadFile, UploadHistoryEntry } from '../../types/uploadedData';
 import './orderMerge.css';
+import { exportToXlsx } from '../../export';
 
 type SourceFilter = 'ALL' | SourceType;
 
@@ -110,6 +111,13 @@ export function OrderMergeTab({
           <div className="results-title">검색 결과: {filteredRows.length}건</div>
           <div className="toolbar">
             <input placeholder="검색 (모든 컬럼)" value={search} onChange={(event) => setSearch(event.target.value)} />
+            <button
+              className="primary"
+              disabled={rows.length === 0}
+              onClick={() => exportToXlsx(rows)}
+            >
+              엑셀 다운로드
+            </button>
           </div>
         </div>
 
