@@ -4,7 +4,7 @@ import {
   parseXlsx, detectSource, convertToUnifiedRows, upsertRows,
 } from './merge';
 import type { Row, MergeStats } from './merge';
-import { SOURCE_LABEL, ALL_COLUMNS } from './schema';
+import { SOURCE_LABEL, ALL_COLUMNS, UPLOAD_DATE_FIELD } from './schema';
 import type { SourceType } from './schema';
 
 interface PendingFile {
@@ -15,6 +15,7 @@ interface PendingFile {
   guess: SourceType | null;
   scores: Record<SourceType, number>;
   selected: SourceType | '' | 'SKIP';
+  uploadedDate: string;
 }
 
 interface HistoryEntry {
@@ -27,6 +28,13 @@ interface HistoryEntry {
 }
 
 const SOURCES: SourceType[] = ['CJ', 'NAVER', 'GS'];
+
+function formatUploadDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function App() {
   const [pending, setPending] = useState<PendingFile[]>([]);
@@ -60,6 +68,7 @@ function App() {
       if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) continue;
       const parsed = await parseXlsx(file);
       const { guess, scores } = detectSource(parsed.header);
+      const uploadedDate = formatUploadDate(new Date());
       setPending((prev) => [...prev, {
         id: `${file.name}-${Date.now()}-${Math.random()}`,
         fileName: parsed.fileName,
@@ -68,6 +77,7 @@ function App() {
         guess,
         scores,
         selected: guess ?? '',
+        uploadedDate,
       }]);
     }
   }
@@ -95,8 +105,9 @@ function App() {
     }
     const source = item.selected as SourceType;
     const { rows: unifiedRows, skippedNoOrderNumber } = convertToUnifiedRows(source, { fileName: item.fileName, header: item.header, rows: item.rows });
+    const datedRows = unifiedRows.map((row) => ({ ...row, [UPLOAD_DATE_FIELD]: item.uploadedDate }));
     const next = new Map(dataMap);
-    const stats = upsertRows(next, unifiedRows);
+    const stats = upsertRows(next, datedRows);
     setDataMap(next);
     setHistory((h) => [...h, {
       id, fileName: item.fileName, source, stats, skippedNoOrderNumber, time: new Date().toLocaleString(),

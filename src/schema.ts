@@ -77,7 +77,9 @@ export const SECONDARY_FIELDS = [
 
 export const AUDIT_FIELDS: string[] = [];
 
-export const ALL_COLUMNS = ['출처', '_key', ...MAIN_FIELDS, ...SECONDARY_FIELDS, ...AUDIT_FIELDS];
+export const UPLOAD_DATE_FIELD = '파일 업로드 날짜';
+
+export const ALL_COLUMNS = [UPLOAD_DATE_FIELD, '출처', '_key', ...MAIN_FIELDS, ...SECONDARY_FIELDS, ...AUDIT_FIELDS];
 
 // 행 고유키를 구성하는 필드 (출처는 별도로 항상 포함)
 export const KEY_FIELDS = ['주문번호', '상품주문번호(아이템)'];
