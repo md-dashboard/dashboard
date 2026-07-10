@@ -1,5 +1,7 @@
 export type SourceType = 'CJ' | 'NAVER' | 'GS';
 
+export const SOURCES: SourceType[] = ['CJ', 'NAVER', 'GS'];
+
 export const SOURCE_LABEL: Record<SourceType, string> = {
   CJ: 'CJ몰',
   NAVER: '네이버',

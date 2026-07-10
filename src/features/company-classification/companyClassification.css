@@ -1,0 +1,27 @@
+.classification-table {
+  max-height: 52vh;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-default);
+  padding: 14px 16px;
+  background: var(--color-bg-table-header);
+}
+
+.summary-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.summary-value {
+  margin-top: 4px;
+  font-size: 22px;
+  font-weight: 700;
+}
