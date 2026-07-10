@@ -30,6 +30,7 @@ export function OrderMergeTab({
   const [filterSource, setFilterSource] = useState<SourceFilter>('ALL');
   const [search, setSearch] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [checkedKeys, setCheckedKeys] = useState<Set<string>>(new Set());
   const dropRef = useRef<HTMLDivElement>(null);
 
   const filteredRows = useMemo(() => {
@@ -41,6 +42,39 @@ export function OrderMergeTab({
     }
     return result;
   }, [rows, filterSource, search]);
+
+  // filteredRows 기준 전체선택 상태
+  const allFilteredChecked = filteredRows.length > 0 && filteredRows.every((row) => checkedKeys.has(row['_key'] as string));
+  const someFilteredChecked = filteredRows.some((row) => checkedKeys.has(row['_key'] as string));
+
+  function toggleCheck(key: string) {
+    setCheckedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleAllFiltered() {
+    if (allFilteredChecked) {
+      // 현재 filteredRows에 있는 것만 해제 (다른 체크는 유지)
+      setCheckedKeys((prev) => {
+        const next = new Set(prev);
+        filteredRows.forEach((row) => next.delete(row['_key'] as string));
+        return next;
+      });
+    } else {
+      setCheckedKeys((prev) => {
+        const next = new Set(prev);
+        filteredRows.forEach((row) => next.add(row['_key'] as string));
+        return next;
+      });
+    }
+  }
+
+  // 체크된 행 (rows 전체에서 추출 — 필터 밖 체크도 포함)
+  const checkedRows = rows.filter((row) => checkedKeys.has(row['_key'] as string));
 
   const countsBySource = useMemo(() => {
     const counts: Record<SourceType, number> = { CJ: 0, NAVER: 0, GS: 0 };
@@ -108,15 +142,25 @@ export function OrderMergeTab({
 
       <section className="card">
         <div className="results-header">
-          <div className="results-title">검색 결과: {filteredRows.length}건</div>
+          <div className="results-title">
+            검색 결과: {filteredRows.length}건
+            {checkedKeys.size > 0 && (
+              <span className="checked-count">{checkedKeys.size}건 선택됨</span>
+            )}
+          </div>
           <div className="toolbar">
             <input placeholder="검색 (모든 컬럼)" value={search} onChange={(event) => setSearch(event.target.value)} />
+            {checkedKeys.size > 0 && (
+              <button className="ghost" onClick={() => setCheckedKeys(new Set())}>
+                선택 해제
+              </button>
+            )}
             <button
               className="primary"
-              disabled={rows.length === 0}
-              onClick={() => exportToXlsx(rows)}
+              disabled={checkedKeys.size === 0}
+              onClick={() => exportToXlsx(checkedRows)}
             >
-              엑셀 다운로드
+              선택 다운로드 {checkedKeys.size > 0 ? `(${checkedKeys.size}건)` : ''}
             </button>
           </div>
         </div>
@@ -142,16 +186,34 @@ export function OrderMergeTab({
         <div className="table-wrap">
           <table>
             <thead>
-              <tr>{ALL_COLUMNS.filter((column) => column !== '_key').map((column) => <th key={column}>{column}</th>)}</tr>
+              <tr>
+                <th className="col-check">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredChecked}
+                    ref={(el) => { if (el) el.indeterminate = !allFilteredChecked && someFilteredChecked; }}
+                    onChange={toggleAllFiltered}
+                    disabled={filteredRows.length === 0}
+                  />
+                </th>
+                {ALL_COLUMNS.filter((column) => column !== '_key').map((column) => <th key={column}>{column}</th>)}
+              </tr>
             </thead>
             <tbody>
-              {filteredRows.map((row) => (
-                <tr key={row['_key'] as string}>
-                  {ALL_COLUMNS.filter((column) => column !== '_key').map((column) => (
-                    <td key={column}>{row[column] === null || row[column] === undefined ? '' : String(row[column])}</td>
-                  ))}
-                </tr>
-              ))}
+              {filteredRows.map((row) => {
+                const key = row['_key'] as string;
+                const checked = checkedKeys.has(key);
+                return (
+                  <tr key={key} className={checked ? 'row-checked' : ''} onClick={() => toggleCheck(key)}>
+                    <td className="col-check" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={checked} onChange={() => toggleCheck(key)} />
+                    </td>
+                    {ALL_COLUMNS.filter((column) => column !== '_key').map((column) => (
+                      <td key={column}>{row[column] === null || row[column] === undefined ? '' : String(row[column])}</td>
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {filteredRows.length === 0 && (
