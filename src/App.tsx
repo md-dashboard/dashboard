@@ -15,10 +15,6 @@ function App() {
     <div className="layout">
       <header className="topbar">
         <div className="topbar-logo">주문 통합 도구</div>
-        <nav className="topbar-links">
-          <span>사용 가이드</span>
-          <span>문의</span>
-        </nav>
       </header>
 
       <div className="body">

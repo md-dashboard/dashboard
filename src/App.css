@@ -22,13 +22,6 @@
   color: var(--color-primary);
 }
 
-.topbar-links {
-  display: flex;
-  gap: 12px;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
 /* Body: sidebar + main */
 .body {
   flex: 1 1 auto;
