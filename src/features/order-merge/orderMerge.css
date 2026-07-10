@@ -114,3 +114,63 @@
 .history li:last-child {
   border-bottom: none;
 }
+
+/* 체크박스 열 */
+.col-check {
+  width: 36px;
+  min-width: 36px;
+  text-align: center;
+  padding: 0 4px !important;
+}
+
+.col-check input[type='checkbox'] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-primary);
+}
+
+/* 체크된 행 */
+tbody tr.row-checked {
+  background: rgba(27, 124, 224, 0.08);
+}
+
+tbody tr {
+  cursor: pointer;
+}
+
+tbody tr:hover {
+  background: var(--color-bg-hover, rgba(255, 255, 255, 0.04));
+}
+
+tbody tr.row-checked:hover {
+  background: rgba(27, 124, 224, 0.14);
+}
+
+/* 선택된 건수 뱃지 */
+.checked-count {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: rgba(27, 124, 224, 0.12);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+/* 선택 해제 ghost 버튼 */
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-default);
+  padding: 0 12px;
+  height: 32px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+button.ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
