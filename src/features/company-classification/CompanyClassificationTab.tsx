@@ -1,50 +1,15 @@
 import { useMemo } from 'react';
 import type { Row } from '../../merge';
 import { SOURCE_LABEL } from '../../schema';
-import type { SourceType } from '../../schema';
+import {
+  getCompanyClassificationRows,
+  getUnclassifiedOrderCount,
+} from './companyClassification';
 import './companyClassification.css';
 
 export function CompanyClassificationTab({ rows }: { rows: Row[] }) {
-  const companyRows = useMemo(() => {
-    const companies = new Map<string, {
-      companyName: string;
-      orderCount: number;
-      sources: Set<SourceType>;
-      shippingBases: Set<string>;
-      productNameCount: number;
-    }>();
-
-    for (const row of rows) {
-      const companyName = String(row['판매자(협력사/브랜드)명'] || row['출고지'] || '미분류');
-      const current = companies.get(companyName) ?? {
-        companyName,
-        orderCount: 0,
-        sources: new Set<SourceType>(),
-        shippingBases: new Set<string>(),
-        productNameCount: 0,
-      };
-
-      current.orderCount += 1;
-      if (row['출처']) current.sources.add(row['출처'] as SourceType);
-      if (row['출고지']) current.shippingBases.add(String(row['출고지']));
-      if (row['상품명']) current.productNameCount += 1;
-      companies.set(companyName, current);
-    }
-
-    return Array.from(companies.values())
-      .map((company) => ({
-        companyName: company.companyName,
-        orderCount: company.orderCount,
-        sources: Array.from(company.sources),
-        shippingBases: Array.from(company.shippingBases),
-        productNameCount: company.productNameCount,
-      }))
-      .sort((a, b) => b.orderCount - a.orderCount || a.companyName.localeCompare(b.companyName));
-  }, [rows]);
-  const unclassifiedCount = useMemo(
-    () => rows.filter((row) => !row['판매자(협력사/브랜드)명'] && !row['출고지']).length,
-    [rows],
-  );
+  const companyRows = useMemo(() => getCompanyClassificationRows(rows), [rows]);
+  const unclassifiedCount = useMemo(() => getUnclassifiedOrderCount(rows), [rows]);
 
   return (
     <>
